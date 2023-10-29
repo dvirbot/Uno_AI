@@ -168,9 +168,10 @@ class UnoAI(UnoPlayer):
             for card in self.draw_pile[color]:
                 self.draw_pile[color][card] *= self.draw_pile_size / (self.draw_pile_size + 1)
 
-    def opponent_put_down_card(self, card: UnoCard):
-        """Calculates what can be discovered from about the game from the card the agent opponent put down nd updates
-        the necessary attributes."""
+    def legacy_opponent_put_down_card(self, card: UnoCard):
+        """Calculates what can be discovered about the game from the card the agent opponent put down and updates
+        the necessary attributes. Contains a mistake in the statistics, but is maintained for the sake of models
+        trained before the mistake's discovery"""
         unknown_cards_of_type = self.update_unknown_cards(card)
         shrink_coefficient = unknown_cards_of_type / (unknown_cards_of_type + 1)
         self.opponent_deck_size -= 1
@@ -180,10 +181,40 @@ class UnoAI(UnoPlayer):
             for card in self.opponent_deck[color]:
                 self.opponent_deck[color][card] *= self.opponent_deck_size / (self.opponent_deck_size + 1)
 
-    def opponent_picked_up(self, current_card: UnoCard):
+    def opponent_put_down_card(self, card: UnoCard):
+        """Calculates what can be discovered about the game from the card the agent opponent put down and updates
+        the necessary attributes."""
+        # return self.legacy_opponent_put_down_card(card=card)
+        if self.opponent_deck_size == 1:
+            return
+        unknown_cards_of_type = self.update_unknown_cards(card)
+        shrink_coefficient = unknown_cards_of_type / (unknown_cards_of_type + 1)
+        self.opponent_deck_size -= 1
+        for color in self.opponent_deck:
+            for opponent_card in self.opponent_deck[color]:
+                self.opponent_deck[color][opponent_card] *= self.opponent_deck_size / (self.opponent_deck_size + 1)
+        previous_expected_of_card = self.opponent_deck[card.color][card.card_type]
+        self.opponent_deck[card.color][card.card_type] *= shrink_coefficient
+        lost_expected_cards = previous_expected_of_card - self.opponent_deck[card.color][card.card_type]
+        scale_up_factor = self.opponent_deck_size / (self.opponent_deck_size - lost_expected_cards)
+        for color in self.opponent_deck:
+            for opponent_card in self.opponent_deck[color]:
+                self.opponent_deck[color][opponent_card] *= scale_up_factor
+        previous_expected_of_card = self.draw_pile[card.color][card.card_type]
+        self.draw_pile[card.color][card.card_type] *= shrink_coefficient
+        if self.draw_pile_size == 0:
+            return
+        lost_expected_cards = previous_expected_of_card - self.draw_pile[card.color][card.card_type]
+        scale_up_factor = self.draw_pile_size / (self.draw_pile_size - lost_expected_cards)
+        for color in self.draw_pile:
+            for card in self.draw_pile[color]:
+                self.draw_pile[color][card] *= scale_up_factor
+
+    def legacy_opponent_picked_up(self, current_card: UnoCard):
         """Calculates what can be discovered about the cards in the draw pile and opponent hand from the fact that
         the opponent drew a card. For example, if the opponent drew when the card was a yellow 7, it means he has no
-        7s, no yellows, and no black cards, which means that all these have to be in the draw pile."""
+        7s, no yellows, and no black cards, which means that all these have to be in the draw pile. Contains a mistake
+        in the statistics, but is maintained for the sake of models trained before the mistake's discovery"""
         amount_shifted = 0
         for color in self.unknown_cards:
             for card_type in self.unknown_cards[color]:
@@ -200,14 +231,49 @@ class UnoAI(UnoPlayer):
                             self.opponent_deck_size - amount_shifted)
         self.opponent_drew_from_pile(num_of_cards=1)
 
-    def opponent_drew_from_pile(self, num_of_cards):
-        """Moves the values from unknown cards from the draw_pile tot he opponent deck for each card the opponent drew"""
+    def opponent_picked_up(self, current_card: UnoCard):
+        """Calculates what can be discovered about the cards in the draw pile and opponent hand from the fact that
+        the opponent drew a card. For example, if the opponent drew when the card was a yellow 7, it means he has no
+        7s, no yellows, and no black cards, which means that all these have to be in the draw pile."""
+        # return self.legacy_opponent_picked_up(current_card)
+
+        amount_shifted = 0
+        for color in self.unknown_cards:
+            for card_type in self.unknown_cards[color]:
+                if color == current_card.color or card_type == current_card.card_type or color == "black":
+                    shift_amount = self.opponent_deck[color][card_type]
+                    self.draw_pile[color][card_type] += shift_amount
+                    amount_shifted += shift_amount
+                    self.opponent_deck[color][card_type] = 0
+        for color in self.unknown_cards:
+            for card_type in self.unknown_cards[color]:
+                if color != current_card.color and card_type != current_card.card_type:
+                    self.draw_pile[color][card_type] *= self.draw_pile_size / (self.draw_pile_size + amount_shifted)
+                    self.opponent_deck[color][card_type] *= self.opponent_deck_size / (
+                            self.opponent_deck_size - amount_shifted)
+        self.opponent_drew_from_pile(num_of_cards=1)
+
+    def legacy_opponent_drew_from_pile(self, num_of_cards):
+        """Moves the values from unknown cards from the draw_pile to the opponent deck for each card the opponent
+         drew"""
         for i in range(num_of_cards):
             self.opponent_deck_size += 1
             self.draw_pile_size -= 1
             for color in self.draw_pile:
                 for card in self.draw_pile[color]:
                     self.opponent_deck[color][card] += self.draw_pile[color][card] / (self.draw_pile_size + 1)
+                    self.draw_pile[color][card] *= self.draw_pile_size / (self.draw_pile_size + 1)
+
+    def opponent_drew_from_pile(self, num_of_cards):
+        """Moves the values from unknown cards from the draw_pile to the opponent deck for each card the opponent
+         drew"""
+        # return self.legacy_opponent_drew_from_pile(num_of_cards)
+        for i in range(num_of_cards):
+            self.opponent_deck_size += 1
+            self.draw_pile_size -= 1
+            for color in self.draw_pile:
+                for card in self.draw_pile[color]:
+                    self.opponent_deck[color][card] *= self.opponent_deck_size / (self.opponent_deck_size - 1)
                     self.draw_pile[color][card] *= self.draw_pile_size / (self.draw_pile_size + 1)
 
     def reshuffle(self, deck):
@@ -261,6 +327,7 @@ class UnoGameWithAI(UnoGame):
         card_type = played_card.card_type
         if card_color == 'black':
             self.current_card.temp_color = new_color
+            self.discard_pile[-1].temp_color = new_color
             if card_type == '+4':
                 next(self)
                 self._pick_up(self.current_player, 4)
@@ -453,6 +520,8 @@ class UnoAIEnvironment(gym.Env):
                     self.ai_player.opponent_put_down_card(self.game.current_card)
                 else:
                     self.game.play(player=player_id, card=None)
+        # This is present in case I want gradual rewards, but reward is currently overwritten to be 0 unless the game
+        # is over, and 1 for victory and -1 for loss
         reward = player_cards - len(self.ai_player.hand) + len(self.game.players[0].hand) - opponent_cards
         if not self.game.is_active:
             if str(self.game.winner) == "AI":
@@ -475,11 +544,11 @@ class UnoAIEnvironment(gym.Env):
         observations.append(len(self.ai_player.hand))
         observations.append(self.ai_player.opponent_deck_size)
         observations.append(self.ai_player.draw_pile_size)
-        if self.game.current_card._color == "black":
+        if self.game.current_card.color_in_practice == "black":
             observations.append(0)
         else:
             observations.append(
-                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card._color)])
+                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card.color_in_practice)])
         return np.array(observations), reward, done, info
 
     def reset(self):
@@ -494,11 +563,11 @@ class UnoAIEnvironment(gym.Env):
         observations.append(len(self.ai_player.hand))
         observations.append(self.ai_player.opponent_deck_size)
         observations.append(self.ai_player.draw_pile_size)
-        if self.game.current_card._color == "black":
+        if self.game.current_card.color_in_practice == "black":
             observations.append(0)
         else:
             observations.append(
-                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card._color)])
+                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card.color_in_practice)])
         return np.array(observations)
 
     def action_mask(self):

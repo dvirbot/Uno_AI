@@ -18,8 +18,9 @@ def mask_fn(env: UnoAIEnvironment):
 env = UnoAIEnvironment()
 env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 
-model_path = os.path.join("Training", "Uno_Model_MaskablePPO_50M_3_Layers")
+model_path = os.path.join("Training", "Uno_Model_MaskablePPO_10M")
 model = MaskablePPO.load(model_path)
+print(model.policy)
 
 # Sets the number of games to test for and initializes other required variables
 episodes = 100000

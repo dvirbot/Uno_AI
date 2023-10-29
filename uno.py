@@ -70,7 +70,7 @@ class UnoCard:
             return self.card_type
 
     @property
-    def _color(self):
+    def color_in_practice(self):
         return self.temp_color if self.temp_color else self.color
 
     @property
@@ -90,7 +90,7 @@ class UnoCard:
         otherwise return False
         """
         return (
-                self._color == other.color or
+                self.color_in_practice == other.color or
                 self.card_type == other.card_type or
                 other.color == 'black'
         )
@@ -389,7 +389,7 @@ class AIUnoGame:
         current_card = game.current_card
         if player == self.player:
             print('Current card: {}, color: {}'.format(
-                game.current_card, game.current_card._color
+                game.current_card, game.current_card.color_in_practice
             ))
             self.print_hand()
             if player.can_play(current_card):

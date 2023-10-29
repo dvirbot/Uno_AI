@@ -173,6 +173,7 @@ class AIUnoGame:
                         if card.color == 'black' and len(player.hand) > 1:
                             game_data.color_selection_required = True
                             while new_color is None:
+                                game_data.log = "please select a color"
                                 new_color = game_data.selected_color
                             game_data.log = 'You selected {}'.format(new_color)
                 else:
@@ -208,11 +209,11 @@ class AIUnoGame:
         observations.append(len(self.ai_player.hand))
         observations.append(self.ai_player.opponent_deck_size)
         observations.append(self.ai_player.draw_pile_size)
-        if self.game.current_card._color == "black":
+        if self.game.current_card.color_in_practice == "black":
             observations.append(0)
         else:
             observations.append(
-                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card._color)])
+                self.reverse_actions_map[(self.game.current_card.card_type, self.game.current_card.color_in_practice)])
         return np.array(observations)
 
     def get_action_mask(self):
@@ -328,7 +329,7 @@ def update():
 
 # Function taken from https://github.com/bennuttall/uno/blob/master/uno_pgz.py, edited to include another button
 def on_mouse_down(pos):
-    """Function calles when the mouse is pressed. It is used to detect clicking on cards, the deck, or the
+    """Function called when the mouse is pressed. It is used to detect clicking on cards, the deck, or the
     reset button"""
     global sprites, game
     if game.player == game.game.current_player:
@@ -344,7 +345,7 @@ def on_mouse_down(pos):
                 game_data.selected_color = color
                 game_data.color_selection_required = False
     if 30 < pos[0] < 110 and 580 < pos[1] < 660:
-        game = AIUnoGame()
+        game = AIUnoGame(ai_model_path)
         game_loop_thread = Thread(target=game_loop)
         game_loop_thread.start()
 
