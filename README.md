@@ -8,7 +8,7 @@ You can play against any of the existing trained models or against any others yo
 https://en.wikipedia.org/wiki/Uno_(card_game)#Official_rules
 
 ### Credit:
-The Uno rules implementation that repository uses is based on the following GitHub Repository: https://github.com/bennuttall/uno
+The Uno rules implementation that repository uses is based on the work of Ben Nuttall in the following GitHub Repository: https://github.com/bennuttall/uno
 
 The AI implementations used in this repository are taken from Stable Baselines3
 
