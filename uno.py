@@ -1,5 +1,5 @@
 # This entire file and much of the basis of this project was taken from the
-# GitHub repository "Python implementation of the card game Uno", by Ben Nuttal (@bennuttal)
+# GitHub repository "Python implementation of the card game Uno", by Ben Nuttall (@bennuttall)
 # Link to the Repository https://github.com/bennuttall/uno
 
 
