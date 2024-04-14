@@ -238,7 +238,7 @@ class AIUnoGame:
 # ---------------------------------------------------------------------------#
 
 # Sets up the game and the pygame zero screen
-ai_model_path = os.path.join("Training", "Uno_Model_MaskablePPO_50M_3_Layers")
+ai_model_path = os.path.join("Training", "Uno_Model_MaskablePPO_10M")
 game = AIUnoGame(model_path=ai_model_path)
 
 WIDTH = 1500

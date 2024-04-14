@@ -28,6 +28,18 @@ log_path = os.path.join("Training", "Logs")
 # Defines the path that the model will be stored after training
 save_path = os.path.join("Training", "Uno_Model_maker_portfolio_demonstration")
 
+model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, tensorboard_log=log_path,
+                    policy_kwargs=policy_kwargs, batch_size=2048)
+
+# Makes it so the model saves every 500000 steps, so that if your computer crashes, you don't lose all your progress
+checkpoint = callbacks.CheckpointCallback(save_freq=500000, save_path=save_path, name_prefix="uno_model")
+
+# Trains the model
+model.learn(total_timesteps=100000000)
+
+# Saves the final model
+model.save(save_path)
+
 
 # def speed_distribution():
 #     # Creates the model
@@ -44,15 +56,14 @@ save_path = os.path.join("Training", "Uno_Model_maker_portfolio_demonstration")
 #     model.save(save_path)
 
 # Creates the model
-model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, tensorboard_log=log_path,
-                    policy_kwargs=policy_kwargs, batch_size=2048)
-print(model.policy)
-
-# Makes it so the model saves every 500000 steps, so that if your computer crashes, you don't lose all your progress
-# checkpoint = callbacks.CheckpointCallback(save_freq=500000, save_path=save_path, name_prefix="uno_model")
-
-# Trains the model
-model.learn(total_timesteps=65536)
+# model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=2, tensorboard_log=log_path,
+#                     policy_kwargs=policy_kwargs, batch_size=2048)
+#
+# # Makes it so the model saves every 500000 steps, so that if your computer crashes, you don't lose all your progress
+# # checkpoint = callbacks.CheckpointCallback(save_freq=500000, save_path=save_path, name_prefix="uno_model")
+#
+# # Trains the model
+# model.learn(total_timesteps=65536)
 
 # Saves the final model
 model.save(save_path)
